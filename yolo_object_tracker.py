@@ -6,16 +6,16 @@ from torch import cuda
 import numpy as np
 import cv2, time, logging
 
-
+# Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("ultralytics").setLevel(logging.WARNING)
 
 
 def get_arguments():
     ap = ArgumentParser()
-    ap.add_argument("-d", "--device", type=str, default='cpu', help="device: 'mps', 'cuda' or 'cpu'")
-    ap.add_argument("-c", "--camera", type=str, default=None, help="path to the optional video file")
-    ap.add_argument("-b", "--buffer", type=int, default=64, help="maximum buffer size for trajectory")
+    ap.add_argument("-d", "--device", type=str, default='cpu', help="Device: 'mps', 'cuda' or 'cpu'")
+    ap.add_argument("-c", "--camera", type=str, default=None, help="Path to the optional video file")
+    ap.add_argument("-b", "--buffer", type=int, default=64, help="Maximum buffer size for trajectory")
     return vars(ap.parse_args())
 
 
@@ -28,20 +28,20 @@ def get_model(device_preference='cpu'):
 
     try:
         model = YOLO('yolo11s.pt').to(device)
-        logging.info(f"Модель успешно загружена, выбранное устройство: {device}")
+        logging.info(f"Model successfully loaded, selected device: {device}")
         return model
 
     except Exception as e:
-        raise RuntimeError(f"Ошибка при загрузке модели YOLO: {e}")
+        raise RuntimeError(f"Error loading YOLO model: {e}")
 
 
 def get_video(video_path=None):
     camera = cv2.VideoCapture(0 if video_path is None else video_path)
 
     if not camera.isOpened():
-        raise RuntimeError("Ошибка при открытии видеопотока")
+        raise RuntimeError("Error: Unable to open video stream")
 
-    logging.info("Видеопоток успешно открыт.")
+    logging.info("Video stream successfully opened.")
     return camera
 
 
@@ -60,9 +60,8 @@ def process_frame_segment(data):
                 detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
 
     end_time = time.time()
-    logging.debug(f"Процесс завершил обработку. Время: {end_time - start_time:.4f} сек.")
+    logging.debug(f"Processing completed. Time: {end_time - start_time:.4f} seconds.")
     return detected_objects
-
 
 
 def draw_tracking(frame, merged_detections, pts, buffer_size):
@@ -79,10 +78,10 @@ def draw_tracking(frame, merged_detections, pts, buffer_size):
             thickness = int(np.sqrt(buffer_size / float(i + 1)) * 2.5)
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-    cv2.imshow("Object Tracking", frame)
+    cv2.imshow("YOLO-Based Object Tracking", frame)
 
     end_time = time.time()
-    logging.debug(f"Отрисовка объекта на экране. Время: {end_time - start_time:.4f} сек.")
+    logging.debug(f"Object rendering on screen completed. Time: {end_time - start_time:.4f} seconds.")
 
     return frame
 
@@ -100,15 +99,15 @@ if __name__ == "__main__":
             break
 
         end_time = time.time()
-        logging.debug(f"Получение и предобработка изображения завершена. Время: {end_time - start_time:.4f} сек.")
+        logging.debug(f"Image capture and preprocessing completed. Time: {end_time - start_time:.4f} seconds.")
 
         results = process_frame_segment([neural, frame])
 
         frame = draw_tracking(frame, results, pts, args["buffer"])
 
         end_time = time.time()
-        logging.info(f"Обработка кадра полностью завершена. Время: {end_time - start_time:.4f} сек.\n\n")
+        logging.info(f"Frame processing fully completed. Time: {end_time - start_time:.4f} seconds.\n\n")
 
-    logging.info("Программа завершена по запросу пользователя.")
+    logging.info("Program terminated by user request.")
     camera.release()
     cv2.destroyAllWindows()
