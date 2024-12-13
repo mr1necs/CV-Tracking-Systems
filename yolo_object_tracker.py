@@ -4,7 +4,7 @@ from collections import deque
 from torch.backends import mps
 from torch import cuda
 import numpy as np
-import cv2, time, logging, tempfile
+import cv2, time, logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -51,18 +51,13 @@ def process_frame_segment(data):
 
     start_time = time.time()
 
-    with tempfile.NamedTemporaryFile(suffix='.jpg') as temp_file:
-        cv2.imwrite(temp_file.name, frame_segment)  # Save frame as an image
-        temp_file.flush()
+    for r in model(frame_segment):
+        for det in r.boxes:
+            conf, cls = det.conf.item(), int(det.cls.item())
+            class_name = model.names[cls].lower()
 
-        # Pass the file path to the YOLO model
-        for r in model(temp_file.name):
-            for det in r.boxes:
-                conf, cls = det.conf.item(), int(det.cls.item())
-                class_name = model.names[cls].lower()
-
-                if class_name.lower() in ('frisbee', 'sports ball', 'apple', 'orange', 'cake', 'clock') and conf >= 0.3:
-                    detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
+            if class_name.lower() in ('frisbee', 'sports ball', 'apple', 'orange', 'cake', 'clock') and conf >= 0.3:
+                detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
 
     end_time = time.time()
     logging.debug(f"Processing completed. Time: {end_time - start_time:.4f} seconds.")
@@ -83,7 +78,7 @@ def draw_tracking(frame, merged_detections, pts, buffer_size):
             thickness = int(np.sqrt(buffer_size / float(i + 1)) * 2.5)
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-    cv2.imshow("YOLO-Based Object Tracking", frame)
+    cv2.imshow("Object Tracking", frame)
 
     end_time = time.time()
     logging.debug(f"Object rendering on screen completed. Time: {end_time - start_time:.4f} seconds.")
