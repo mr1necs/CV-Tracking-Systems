@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %
 def get_arguments():
     ap = ArgumentParser()
     ap.add_argument("-c", "--camera", type=str, default=None, help="Path to an optional video file")
-    ap.add_argument("-b", "--buffer", type=int, default=32, help="Maximum buffer size for trajectory tracking")
+    ap.add_argument("-b", "--buffer", type=int, default=64, help="Maximum buffer size for trajectory tracking")
     return vars(ap.parse_args())
 
 
