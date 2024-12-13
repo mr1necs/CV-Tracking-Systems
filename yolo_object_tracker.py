@@ -4,7 +4,7 @@ from collections import deque
 from torch.backends import mps
 from torch import cuda
 import numpy as np
-import cv2, time, logging
+import cv2, time, logging, tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -27,7 +27,7 @@ def get_model(device_preference='cpu'):
     )
 
     try:
-        model = YOLO('yolo11s.pt').to(device)
+        model = YOLO('yolo11n.pt').to(device)
         logging.info(f"Model successfully loaded, selected device: {device}")
         return model
 
@@ -51,13 +51,18 @@ def process_frame_segment(data):
 
     start_time = time.time()
 
-    for r in model(frame_segment):
-        for det in r.boxes:
-            conf, cls = det.conf.item(), int(det.cls.item())
-            class_name = model.names[cls].lower()
+    with tempfile.NamedTemporaryFile(suffix='.jpg') as temp_file:
+        cv2.imwrite(temp_file.name, frame_segment)  # Save frame as an image
+        temp_file.flush()
 
-            if class_name.lower() in ('frisbee', 'sports ball', 'apple', 'orange', 'cake', 'clock') and conf >= 0.3:
-                detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
+        # Pass the file path to the YOLO model
+        for r in model(temp_file.name):
+            for det in r.boxes:
+                conf, cls = det.conf.item(), int(det.cls.item())
+                class_name = model.names[cls].lower()
+
+                if class_name.lower() in ('frisbee', 'sports ball', 'apple', 'orange', 'cake', 'clock') and conf >= 0.3:
+                    detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
 
     end_time = time.time()
     logging.debug(f"Processing completed. Time: {end_time - start_time:.4f} seconds.")
