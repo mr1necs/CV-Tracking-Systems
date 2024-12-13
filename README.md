@@ -30,6 +30,8 @@ Ensure you have the following installed on your system:
 - imutils
 - ultralytics
 - torch
+- time
+- logging
 
 Alternatively, you can install all dependencies using the provided `requirements.txt` file:
 
@@ -73,11 +75,11 @@ pip install -r requirements.txt
 3. Run the HSV-Based Object Tracker:
 
    ```bash
-   python hsv_object_tracker.py --video [video_path] --buffer [buffer_size]
+   python hsv_object_tracker.py --camera [video_path] --buffer [buffer_size]
    ```
 
-   - `video`: Path to the video file or use webcam by default.
-   - `buffer`: Maximum trajectory buffer size (default: 32).
+   - `camera`: Path to the video file or use webcam by default.
+   - `buffer`: Maximum trajectory buffer size (default: 64).
 
 4. Press `q` to exit the program.
 
@@ -88,7 +90,7 @@ pip install -r requirements.txt
 ```
 CV-Tracking-Systems/
 |-- yolo_object_tracker.py   # YOLO-based object tracker
-|-- hsv_object_tracker.py    # HSV-based object tracker using HSV and contours
+|-- hsv_object_tracker.py    # HSV-based object tracker 
 |-- requirements.txt         # List of dependencies
 |-- README.md                # Project documentation
 ```
