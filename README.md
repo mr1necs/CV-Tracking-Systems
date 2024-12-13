@@ -27,11 +27,9 @@ Ensure you have the following installed on your system:
 - Python 3.8 or later
 - OpenCV
 - numpy
-- imutils
 - ultralytics
 - torch
-- time
-- logging
+- _and other_
 
 Alternatively, you can install all dependencies using the provided `requirements.txt` file:
 
