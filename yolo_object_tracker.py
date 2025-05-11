@@ -1,12 +1,15 @@
+import logging
+import time
 from argparse import ArgumentParser
-from ultralytics import YOLO
 from collections import deque
-from torch.backends import mps
-from torch import cuda
-import numpy as np
-import cv2, time, logging
 
-# Configure logging
+import cv2
+import imutils
+import numpy as np
+from torch import cuda
+from torch.backends import mps
+from ultralytics import YOLO
+
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("ultralytics").setLevel(logging.WARNING)
 
@@ -37,10 +40,7 @@ def get_model(device_preference='cpu'):
 
 def get_video(video_path=None):
     camera = cv2.VideoCapture(0 if video_path is None else video_path)
-
-    if not camera.isOpened():
-        raise RuntimeError("Error: Unable to open video stream")
-
+    if not camera.isOpened(): raise RuntimeError("Error: Unable to open video stream")
     logging.info("Video stream successfully opened.")
     return camera
 
@@ -48,7 +48,6 @@ def get_video(video_path=None):
 def process_frame_segment(data):
     model, frame_segment = data
     detected_objects = []
-
     start_time = time.time()
 
     for r in model(frame_segment):
@@ -59,8 +58,7 @@ def process_frame_segment(data):
             if class_name.lower() in ('frisbee', 'sports ball', 'apple', 'orange', 'cake', 'clock') and conf >= 0.3:
                 detected_objects.append((class_name, conf, det.xyxy[0].cpu().numpy()))
 
-    end_time = time.time()
-    logging.debug(f"Processing completed. Time: {end_time - start_time:.4f} seconds.")
+    logging.debug(f"Processing completed. Time: {time.time() - start_time:.4f} seconds.")
     return detected_objects
 
 
@@ -79,9 +77,7 @@ def draw_tracking(frame, merged_detections, pts, buffer_size):
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
     cv2.imshow("Object Tracking", frame)
-
-    end_time = time.time()
-    logging.debug(f"Object rendering on screen completed. Time: {end_time - start_time:.4f} seconds.")
+    logging.debug(f"Object rendering on screen completed. Time: {time.time() - start_time:.4f} seconds.")
 
     return frame
 
@@ -95,18 +91,11 @@ if __name__ == "__main__":
     while not (cv2.waitKey(1) & 0xFF == ord('q')):
         start_time = time.time()
         grabbed, frame = camera.read()
-        if not grabbed:
-            break
-
-        end_time = time.time()
-        logging.debug(f"Image capture and preprocessing completed. Time: {end_time - start_time:.4f} seconds.")
-
-        results = process_frame_segment([neural, frame])
-
-        frame = draw_tracking(frame, results, pts, args["buffer"])
-
-        end_time = time.time()
-        logging.info(f"Frame processing fully completed. Time: {end_time - start_time:.4f} seconds.\n\n")
+        frame = imutils.resize(frame, width=1080)
+        if not grabbed: break
+        logging.debug(f"Image capture and preprocessing completed. Time: {time.time() - start_time:.4f} seconds.")
+        frame = draw_tracking(frame, process_frame_segment([neural, frame]), pts, args["buffer"])
+        logging.info(f"Frame processing fully completed. Time: {time.time() - start_time:.4f} seconds.\n\n")
 
     logging.info("Program terminated by user request.")
     camera.release()
