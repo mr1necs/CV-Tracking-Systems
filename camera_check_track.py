@@ -89,11 +89,11 @@ if __name__ == '__main__':
 
         if tracker is None or force_detect:
             det = detect_object(model, frame, CONF_THRESH)
+            frame_counter = 1
             if det:
                 current_cls, bbox = det
                 tracker = init_tracker(frame, bbox)
                 logging.info(f"Detector {'reinitialized' if force_detect else 'initialized'} tracker for {current_cls}")
-			frame_counter = 1    
         else:
             ok, bbox = tracker.update(frame)
             if not ok:
