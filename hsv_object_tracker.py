@@ -1,9 +1,12 @@
 from argparse import ArgumentParser
 from collections import deque
-import numpy as np
-import cv2, logging, time, imutils
 
-# Configure logging
+import cv2
+import imutils
+import logging
+import numpy as np
+import time
+
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
@@ -16,17 +19,13 @@ def get_arguments():
 
 def get_video(video_path=None):
     camera = cv2.VideoCapture(0 if video_path is None else video_path)
-
-    if not camera.isOpened():
-        raise RuntimeError("Error: Unable to open video stream")
-
+    if not camera.isOpened(): raise RuntimeError("Error: Unable to open video stream")
     logging.info("Video stream successfully opened.")
     return camera
 
 
 def process_frame(frame, color_lower, color_upper):
     start_time = time.time()
-
     frame = imutils.resize(frame, width=1080)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -35,14 +34,12 @@ def process_frame(frame, color_lower, color_upper):
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
-    end_time = time.time()
-    logging.debug(f"Processing completed. Time: {end_time - start_time:.4f} seconds.")
+    logging.debug(f"Processing completed. Time: {time.time() - start_time:.4f} seconds.")
     return mask, frame
 
 
 def find_and_draw_contours(frame, mask, pts, buffer_size):
     start_time = time.time()
-
     contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
     center = None
 
@@ -64,9 +61,7 @@ def find_and_draw_contours(frame, mask, pts, buffer_size):
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
     cv2.imshow("HSV-Based Object Tracking", frame)
-
-    end_time = time.time()
-    logging.debug(f"Object rendering on screen completed. Time: {end_time - start_time:.4f} seconds.")
+    logging.debug(f"Object rendering on screen completed. Time: {time.time() - start_time:.4f} seconds.")
     return frame
 
 
@@ -79,17 +74,11 @@ if __name__ == "__main__":
     while not (cv2.waitKey(1) & 0xFF == ord('q')):
         start_time = time.time()
         grabbed, frame = camera.read()
-        if not grabbed:
-            break
-
-        end_time = time.time()
-        logging.debug(f"Image capture and preprocessing completed. Time: {end_time - start_time:.4f} seconds.")
-
+        if not grabbed: break
+        logging.debug(f"Image capture and preprocessing completed. Time: {time.time() - start_time:.4f} seconds.")
         mask, processed_frame = process_frame(frame, green_lower, green_upper)
         output_frame = find_and_draw_contours(processed_frame, mask, pts, args["buffer"])
-
-        end_time = time.time()
-        logging.info(f"Frame processing fully completed. Time: {end_time - start_time:.4f} seconds.\n\n")
+        logging.info(f"Frame processing fully completed. Time: {time.time() - start_time:.4f} seconds.\n\n")
 
     logging.info("Program terminated by user request.")
     camera.release()
